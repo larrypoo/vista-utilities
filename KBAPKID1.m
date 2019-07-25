@@ -1,4 +1,4 @@
-KBAPKID1 ;ven/lgc - Checksum KIDS utilities ; 7/18/19 2:54am
+KBAPKID1 ;ven/lgc - Checksum KIDS utilities ; 7/22/19 3:51pm
  ;;18.0;SAMI;;
  ;
  quit  ; no entry from top
@@ -80,18 +80,20 @@ KIDSCKS(filename,path,pkgarr) ; Build array of KIDS routine checksums
  .;   pull date patch installed
  .;
  . If line["Designation:" do  quit
- .. set ptchname=$tr($tr($piece(line,"Designation:",2)," "),$C(13))
+DESIG .. set ptchname=$tr($tr($piece(line,"Designation:",2)," "),$C(13))
  ..; if patch version is integer, add ".0"
  .. if $p(ptchname,"*",2)'["." do
  ... new ptchver s ptchver=$p(ptchname,"*",2)_".0"
  ... s $p(ptchname,"*",2)=ptchver
  .. ;
  .. ; save name of the next patch we will want to install
+ .. ;
  .. set pkgarr("PatchToInstall")=$TR(ptchname,$C(13))
- .. if (+$p(ptchname,"*",2)=$p(ptchname,"*",2)) do
- ... set $piece(ptchname,"*",2)=$piece(ptchname,"*",2)_".0"
  .. set patchien=$O(^XPD(9.7,"B",ptchname,0))
- .. if $g(patchien) do
+ .. ;
+ .. ; get Install Date if patch already installed
+ .. ;
+PTCHINST .. if $g(patchien) do
  ... write !,!,"Patch IEN in INSTALL file:",patchien,!,!
  ... set instaldt=$piece($get(^XPD(9.7,patchien,1)),"^",3)
  .;
@@ -144,6 +146,8 @@ KBAP1 .. set ptchstr=$piece(line,"**",2) ; string of patches
 S1 write !,!,"Patch Name : ",ptchname
  write !," Installed : ",instaldt,!,!
  ;
+ ; now build the CKS or CKSPI file from RTN array
+ ;
  new ptchext s ptchext=$Select($get(instaldt)>0:".CKSPI",1:".CKS")
  set outfile=$piece(filename,".")_ptchext
  do BLDNEWF(path,outfile,.RTN)
@@ -166,11 +170,14 @@ RTNCKSM(RTNAME) ; Return checksum of routine
 BLDNEWF(path,outfile,RTN) ; Build a new file with KIDS routine checksums
  ;@input
  ;  path      = path (directory) where file is to be written
- ;  outfile   = name and extension of file to write
+ ;  outfile   = NAME and EXTENSION [.CKS or .CKSPI] of file
  ;  RTN       = array by reference of lines to write to file
  ;            e.g. RTN("OOPSGUI1")="OOPSGUI1^PatchText^34497332^34497330^3190715.162213^34497330^"
  ;output
  ;  creates-file of routines and before and after checksums
+ ;    CKS extension if the patch has not been installed
+ ;    CKSPI extension if installed
+ ;
  ;zwr RTN ; debug
  new node,cnt
  set cnt=0
@@ -300,51 +307,6 @@ PATCHARR(ptcharr) ; Build array of all patches from patch server
  ; Fix special patch problem with PRCA*4.5*317
  kill ptcharr("PRCA-4P5_SEQ-278_PAT-317.TXT")
  set ptcharr("PRCA-4p5_SEQ-278_PAT-317.TXT")=""
- quit
- ;
- ;@ppi
-POSTICHK(path,filename) ;
- ;Input
- ;  filename = name including extension of .CKS file to open
- ;Output
- ;  creates-file  filename.CKSPI with post install checksums
- ;
- ; Use the BEFORE install .CKS file to build our local array
- ;
- ;e.g. PatchText^befor chksum^after chksum^date^active rtn chksum
- ; "^PatchText^13617982^14988614^3190712.203343^13617982^^"
- ; "^PatchText^n/a^1842298^3190712.203343^0^^"
- new cksmatch set cksmatch=-1
- q:filename="" cksmatch
- if $get(path)="" set path="/home/osehra/KIDS/"
- do OPEN^%ZISH("FILE",path,filename,"R")
- quit:POP cksmatch
- new line,RTN,cnt
- kill RTN
- set cnt=0
- for  use IO read line:1 quit:$$STATUS^%ZISH  do
- . set cnt=$g(cnt)+1
- . set RTN(cnt)=line
- do CLOSE^%ZISH
- zwr RTN
- ;
- ; Check that the checksum of the active routine
- ;   is the same as that expected after install
- ;
- ; RTN(1)="DDGF2^PatchText^31932302^31954979^3190718.02313^31954979^^"
- new rtname,postchks,actchks
- s rtname=$p(RTN(cnt),"^")
- s postchks=$p(RTN(cnt),"^",4)
- s actchks=$$xxx(rtname)
- s $p(RTN(cnt),"^",5)=fmdate
- s $p(RTN(cnt),"^",6)=actchks
- if '(actchks=postchks) s $p(RTN(cnt),"^",7)="*"
- else s $p(RTN(cnt),"^",7)=""
- ; set some variable to 0 or 1 depending on if any "*"
- write out file with CKSPI extension
- return the success variable
- quit success
- ;
  quit
  ;
  ;

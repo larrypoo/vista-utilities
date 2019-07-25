@@ -1,4 +1,4 @@
-KBAPKIDS ;ven/lgc - Semi-automated KIDS install ; 7/18/19 2:58am
+KBAPKIDS ;ven/lgc - Semi-automated KIDS install ; 7/25/19 3:46pm
  ;;18.0;SAMI;;
  ;
  quit  ; no entry from top
@@ -27,19 +27,27 @@ GETKIDS set success=$$PULLKIDS^KBAPKIDS(.pkgarr)
  ;
  write !,!,"success=",success,!,!
  ;
- if success["k",success["t",success["0" do  quit
+ if success["k",success["t",success["0" do
 LOAD . do START^KBAPXPDL(.pkgarr) ; load KIDS
 BACKUP . do START^KBAPXPDB(.pkgarr) ; backup KIDS
 INSTALL . do START^KBAPXPDI(.pkgarr) ; install KIDS
+ else  do  quit
+ . if '(success["k") w !,!,"*** Could not identify KIDS file ***",!
+ . if '(success["t") w !,!,"*** Could not identify TXT file ***",!
+ . if (success["1") w !,!,"*** Before checksum errors ***",!
  ;
  ; Generate post install checksums
- ; need the name of the .CKS file in filename
- ;set success=$$POSTICHK^KBAPKID1(path,filename)
- ;if success["1" w !,!,"*** Post Install checksum Failure ***",!,!
- ;else  d
- ; write !,!,"Post Install Checksums Correct",!,!
  ;
- ;write !,!,"*** Patch Install FAILED ***",!,!
+POSTINST n txtfile s txtfile=$get(pkgarr("txt file name"))
+ quit:$length(txtfile)=""
+ s success=$$KIDSCKS^KBAPKID1(txtfile,"/home/osehra/KIDS/")
+ ;
+ if success["1" do  quit
+ . w !,!,"*** Post Install checksum Failure ***",!,!
+ . write !,!,"*** Patch Install FAILED ***",!,!
+ ;
+ write !,!,"Post Install Checksums Correct",!,!
+ ;
  quit
  ;
  ;
@@ -79,6 +87,7 @@ LASTPTCH(pkgarr) ; Return last patch installed
  ;
  new PAHIEN,INSTLIEN,node,ss4
  set ss4=$order(^DIC(9.4,pkgarr("ien"),22,99999),-1)
+ quit:'ss4
  set PAHIEN=$order(^DIC(9.4,pkgarr("ien"),22,ss4,"PAH",99999),-1)
  if PAHIEN do
  . set pkgarr("patch#")=+$get(^DIC(9.4,pkgarr("ien"),22,ss4,"PAH",PAHIEN,0))
@@ -170,11 +179,18 @@ PULLKIDS(pkgarr) ;
  f  s node=$q(@node) quit:'(node[nxtpstr)  do
  . set filename=$QS(node,1)
  . do PULLPTCH^KBAPKID1(filename,"~/KIDS/")
+ .;
+ .; kids file
+ .;
  . if ($$UP^XLFSTR(filename)[".KID") do
+ .. set pkgarr("kids file name")=filename
  .. set rslt=$g(rslt)_"k"
+ .;
+ .; txt file
+ .;
  . if ($$UP^XLFSTR(filename)[".TXT") do
  .. set rslt=$g(rslt)_"t"
- .. set txtfile=filename
+ .. set pkgarr("txt file name")=filename
  ..;
  ..; Generate the .CKS file and return
  ..;   =0 no checksum errors, 1 = one or more routines failed chksum
@@ -182,5 +198,18 @@ PULLKIDS(pkgarr) ;
  ..;
  ;
  quit:$Q rslt  quit
+ ;
+ ;
+PKGPTCHI ;
+ new pkgien set pkgien=0
+ for  set pkgien=$O(^DIC(9.4,pkgien)) Q:'pkgien  D
+ . kill pkgarr
+ . set pkgarr("ien")=pkgien
+ . set pkgarr("abb")=$piece(^DIC(9.4,pkgien,0),"^",2)
+ . set pkgarr("name")=$piece(^DIC(9.4,pkgien,0),"^")
+ . set pkgarr("version")=$get(^DIC(9.4,pkgarr("ien"),"VERSION"))
+ . do LASTPTCH^KBAPKIDS(.pkgarr)
+ . write !,pkgarr("abb"),"^",pkgarr("name"),"^",$get(pkgarr("ptchstrg"))_"^",$get(pkgarr("instdate"))_"^"
+ quit
  ;
 EOR ; End of routine KBAPKIDS

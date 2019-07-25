@@ -1,5 +1,5 @@
-KBAPXPDI ;;ven/lgc - Load Distribution Global; 7/3/19 9:15am ; 7/17/19 6:56pm
- ;;
+KBAPXPDI ;;ven/lgc - Load Distribution Global; 7/3/19 9:15am ; 7/25/19 4:34pm
+ ;;18.0;SAMI;;
  ;
  ;XPDI - SFISC/RSD - Install Process ; 7/3/19 9:18pm
  ;;8.0;KERNEL;**10,21,39,41,44,58,68,108,145,184,229**;Jul 10, 1995
