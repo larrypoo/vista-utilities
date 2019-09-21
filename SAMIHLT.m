@@ -1,4 +1,8 @@
 SAMIHLT ;SAMI/lgc - HL7 TIU processing for VAPALS ;Sep 19, 2019@19:35
+deprecated.  see SAMIVHL
+
+
+
  ;;
  ;;
  quit ; no entry from top
