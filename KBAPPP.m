@@ -1,4 +1,4 @@
-KBAPPP ;ven/lgc - PULL PATCHES FROM OSEHRA - ; 6/14/19 8:57pm
+KBAPPP ;ven/lgc - PULL PATCHES FROM OSEHRA - ;Oct 21, 2019@18:21
  ;;
  ;
  ; Routine to run on our patch server which pulls all the
@@ -49,6 +49,20 @@ GETMURL ;
  ..;
  .. do SAVEPTCH(filename,newurl)
  ;
+ ;
+CPRS30B ; Now take care of special url repos
+ set newurl="https://foia-vista.osehra.org/Patches_By_Application/CPRS%20GUI%20FILES/CPRS%20VERSION%2030b/"
+ set filename="Patches-CPRS30B"
+ set cmd="curl -o "_"~/patch/"_filename_" "_newurl
+ write !,cmd,!
+ zsystem cmd
+ ; now parse out all the patch files in this file of HTML
+ ;  code and save each patch file onto our server under the
+ ;  ~/patch/ directory
+ ;
+ do SAVEPTCH(filename,newurl)
+ ;
+ ;
  ; For ease of pulling the names of all the files on our
  ;  patch server onto a client, build a file that lists
  ;  the directory of ~/patch/
@@ -64,7 +78,7 @@ GETMURL ;
  ;
  ;
  ;
- ;Parse out all the patch file names from this file 
+ ;Parse out all the patch file names from this file
  ;  containing the HTML for the contents of one of the
  ;  month-year patch directories from the OSEHRA web site
  ;@ppi
@@ -107,7 +121,7 @@ SAVEPTCH(filename,newurl) ; Parse out HTML in year-month file
  . write !,$length(ptchname)," ",ptchname
  .;
  . set ptchurl=newurl_ptchname
- .; 
+ .;
  .; use curl to save the patch off the OSEHRA server onto
  .;  our patch server
  . set cmd="curl -o "_"~/patch/"_ptchname_" "_ptchurl
